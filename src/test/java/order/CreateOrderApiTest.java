@@ -9,6 +9,7 @@ import org.junit.Test;
 import praktikum.config.BaseURL;
 import steps.OrderSteps;
 import steps.UserSteps;
+import org.junit.After;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,11 +35,17 @@ public class CreateOrderApiTest {
         Response response = userSteps.registerUser(payload);
         accessToken = userSteps.extractAccessToken(response);
     }
+    @After
+    public void tearDown() {
+        if (accessToken != null) {
+            userSteps.deleteUser(accessToken); // не добавляй повторно "Bearer", он уже есть в методе
+        }
+    }
 
     @Test
     @DisplayName("Создание заказа с авторизацией и валидными ингредиентами")
     @Description("Ожидается успешное создание заказа и возвращение номера заказа")
-    public void createOrderWithAuth() {
+    public void testCreateOrderWithAuth() {
         List<String> ingredientIds = orderSteps.getIngredientIds();
         Response response = orderSteps.createOrder(
                 ingredientIds.subList(0, 2),
