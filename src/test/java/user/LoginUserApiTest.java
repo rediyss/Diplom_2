@@ -23,14 +23,14 @@ public class LoginUserApiTest {
         baseURI = BaseURL.BASE_URL;
         email = steps.generateUniqueEmail();
         UserDto user = new UserDto(email, password, "Test");
-        steps.registerUser(user); // зарегистрировать пользователя
+        steps.registerUser(user);
     }
 
     @Test
     @DisplayName("Логин с валидными данными")
     @Description("Пользователь должен успешно залогиниться")
     public void loginWithValidCredentials() {
-        UserDto user = new UserDto(email, password, null); // имя не нужно
+        UserDto user = new UserDto(email, password, null);
         Response response = steps.loginUser(user);
 
         response.then().statusCode(200)
@@ -39,10 +39,21 @@ public class LoginUserApiTest {
     }
 
     @Test
-    @DisplayName("Логин с невалидными данными")
-    @Description("Ожидается 401 и сообщение об ошибке")
-    public void loginWithInvalidCredentials() {
-        UserDto user = new UserDto("wrong@email.com", "wrongpass", null);
+    @DisplayName("Логин с неверным email")
+    @Description("Ожидается 401 и сообщение об ошибке при неверном email")
+    public void loginWithInvalidEmail() {
+        UserDto user = new UserDto("wrong_" + email, password, null);
+        Response response = steps.loginUser(user);
+
+        response.then().statusCode(401)
+                .body("message", equalTo("email or password are incorrect"));
+    }
+
+    @Test
+    @DisplayName("Логин с неверным паролем")
+    @Description("Ожидается 401 и сообщение об ошибке при неверном пароле")
+    public void loginWithInvalidPassword() {
+        UserDto user = new UserDto(email, "wrongpass", null);
         Response response = steps.loginUser(user);
 
         response.then().statusCode(401)
