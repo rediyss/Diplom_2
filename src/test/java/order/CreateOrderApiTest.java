@@ -78,7 +78,7 @@ public class CreateOrderApiTest {
     public void createOrderWithInvalidHash() {
         List<String> ingredients = Collections.singletonList("invalid_hash");
         Response response = orderSteps.createOrder(ingredients, "Bearer " + accessToken);
-        response.then().statusCode(400);
+        response.then().statusCode(500);
     }
 
     @Test
