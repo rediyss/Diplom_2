@@ -29,7 +29,9 @@ public class CreateUserApiTest {
     @After
     public void tearDown() {
         if (accessToken != null) {
-            steps.deleteUser(accessToken);
+            steps.deleteUser(accessToken)
+                    .then()
+                    .statusCode(anyOf(is(202), is(401)));
         }
     }
 

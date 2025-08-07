@@ -36,7 +36,9 @@ public class CreateOrderApiTest {
     @After
     public void tearDown() {
         if (accessToken != null) {
-            userSteps.deleteUser(accessToken);
+            userSteps.deleteUser(accessToken)
+                    .then()
+                    .statusCode(anyOf(is(202), is(401)));
         }
     }
 

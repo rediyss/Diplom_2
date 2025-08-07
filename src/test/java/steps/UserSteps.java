@@ -22,13 +22,11 @@ public class UserSteps {
     }
 
     @Step("Удаление пользователя по accessToken")
-    public void deleteUser(String accessToken) {
-        given()
+    public Response deleteUser(String accessToken) {
+        return given()
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
-                .delete("/api/auth/user")
-                .then()
-                .statusCode(202);
+                .delete("/api/auth/user");
     }
 
     @Step("Извлечение accessToken из ответа")
