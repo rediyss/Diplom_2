@@ -2,59 +2,49 @@ package user;
 
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.config.BaseURL;
 import steps.UserSteps;
+import steps.UserDto;
 
+import static io.restassured.RestAssured.baseURI;
 import static org.hamcrest.Matchers.*;
 
 public class LoginUserApiTest {
 
     private final UserSteps steps = new UserSteps();
-    private String accessToken;
-    private String email = steps.generateUniqueEmail();
+    private String email;
     private final String password = "123456";
-    private final String name = "Test";
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = BaseURL.BASE_URL;
-
-        String payload = String.format("{\"email\": \"%s\", \"password\": \"%s\", \"name\": \"%s\"}", email, password, name);
-        Response response = steps.registerUser(payload);
-        accessToken = steps.extractAccessToken(response);
-    }
-
-    @After
-    public void tearDown() {
-        if (accessToken != null) {
-            steps.deleteUser(accessToken);
-        }
+        baseURI = BaseURL.BASE_URL;
+        email = steps.generateUniqueEmail();
+        UserDto user = new UserDto(email, password, "Test");
+        steps.registerUser(user); // зарегистрировать пользователя
     }
 
     @Test
-    @DisplayName("Успешный логин с существующим пользователем")
-    @Description("Проверка успешной авторизации с корректными логином и паролем")
-    public void loginWithValidUser() {
-        String payload = String.format("{\"email\": \"%s\", \"password\": \"%s\"}", email, password);
+    @DisplayName("Логин с валидными данными")
+    @Description("Пользователь должен успешно залогиниться")
+    public void loginWithValidCredentials() {
+        UserDto user = new UserDto(email, password, null); // имя не нужно
+        Response response = steps.loginUser(user);
 
-        Response response = steps.loginUser(payload);
         response.then().statusCode(200)
                 .body("success", is(true))
                 .body("accessToken", notNullValue());
     }
 
     @Test
-    @DisplayName("Ошибка при логине с неверным логином и паролем")
-    @Description("Ожидается ошибка 401 Unauthorized и сообщение о некорректных данных")
+    @DisplayName("Логин с невалидными данными")
+    @Description("Ожидается 401 и сообщение об ошибке")
     public void loginWithInvalidCredentials() {
-        String payload = "{\"email\": \"wrong@email.com\", \"password\": \"wrongpass\"}";
+        UserDto user = new UserDto("wrong@email.com", "wrongpass", null);
+        Response response = steps.loginUser(user);
 
-        Response response = steps.loginUser(payload);
         response.then().statusCode(401)
                 .body("message", equalTo("email or password are incorrect"));
     }

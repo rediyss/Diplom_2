@@ -12,11 +12,11 @@ public class UserSteps {
         return "user" + System.currentTimeMillis() + "@test.com";
     }
 
-    @Step("Регистрация пользователя: {payload}")
-    public Response registerUser(String payload) {
+    @Step("Регистрация пользователя: {user}")
+    public Response registerUser(UserDto user) {
         return given()
                 .header("Content-type", "application/json")
-                .body(payload)
+                .body(user) // сериализация объекта
                 .when()
                 .post("/api/auth/register");
     }
@@ -28,18 +28,19 @@ public class UserSteps {
                 .when()
                 .delete("/api/auth/user")
                 .then()
-                .statusCode(202); // см. документацию — может быть другой код
+                .statusCode(202);
     }
 
     @Step("Извлечение accessToken из ответа")
     public String extractAccessToken(Response response) {
         return response.jsonPath().getString("accessToken").replace("Bearer ", "");
     }
-    @Step("Логин пользователя: {payload}")
-    public Response loginUser(String payload) {
+
+    @Step("Логин пользователя: {user}")
+    public Response loginUser(UserDto user) {
         return given()
                 .header("Content-type", "application/json")
-                .body(payload)
+                .body(user)
                 .when()
                 .post("/api/auth/login");
     }

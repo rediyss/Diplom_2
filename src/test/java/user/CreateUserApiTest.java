@@ -2,71 +2,87 @@ package user;
 
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.config.BaseURL;
+import steps.UserDto;
 import steps.UserSteps;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static io.restassured.RestAssured.baseURI;
+import static org.hamcrest.Matchers.*;
 
 public class CreateUserApiTest {
 
     private final UserSteps steps = new UserSteps();
-    private String accessToken;
+    private String email;
 
     @Before
-    public void setup() {
-        RestAssured.baseURI = BaseURL.BASE_URL;
-    }
-
-    @After
-    public void tearDown() {
-        if (accessToken != null) {
-            steps.deleteUser(accessToken);
-        }
+    public void setUp() {
+        baseURI = BaseURL.BASE_URL;
+        email = steps.generateUniqueEmail();
     }
 
     @Test
-    @DisplayName("Успешная регистрация нового пользователя")
-    @Description("Регистрация с уникальным email. Ожидается 200 и accessToken в ответе.")
+    @DisplayName("Создание уникального пользователя")
+    @Description("Ожидается успешное создание пользователя и получение accessToken")
     public void createUniqueUser() {
-        String email = steps.generateUniqueEmail();
-        String payload = String.format("{\"email\": \"%s\", \"password\": \"123456\", \"name\": \"Test\"}", email);
+        UserDto user = new UserDto(email, "123456", "Test");
+        Response response = steps.registerUser(user);
 
-        Response response = steps.registerUser(payload);
-        response.then().statusCode(200)
-                .body("success", equalTo(true))
+        response.then()
+                .statusCode(200)
+                .body("success", is(true))
                 .body("accessToken", notNullValue());
-
-        accessToken = steps.extractAccessToken(response);
     }
 
     @Test
-    @DisplayName("Регистрация уже существующего пользователя")
-    @Description("Регистрация с повторным email. Ожидается 403 и сообщение.")
+    @DisplayName("Создание уже зарегистрированного пользователя")
+    @Description("Ожидается 403 и сообщение 'User already exists'")
     public void createAlreadyRegisteredUser() {
-        String email = steps.generateUniqueEmail();
-        String payload = String.format("{\"email\": \"%s\", \"password\": \"123456\", \"name\": \"Test\"}", email);
+        UserDto user = new UserDto(email, "123456", "Test");
+        steps.registerUser(user); // первая регистрация
 
-        steps.registerUser(payload);
+        Response response = steps.registerUser(user); // повторная
 
-        Response second = steps.registerUser(payload);
-        second.then().statusCode(403)
+        response.then()
+                .statusCode(403)
                 .body("message", equalTo("User already exists"));
     }
 
     @Test
-    @DisplayName("Ошибка при регистрации без имени")
-    @Description("Регистрация без поля name. Ожидается 403 и сообщение об ошибке.")
-    public void createUserWithMissingField() {
-        String payload = "{\"email\": \"missing@test.com\", \"password\": \"123456\"}";
+    @DisplayName("Создание пользователя без email")
+    @Description("Ожидается 403 и сообщение об обязательных полях")
+    public void createUserWithoutEmail() {
+        UserDto user = new UserDto(null, "123456", "Test");
+        Response response = steps.registerUser(user);
 
-        Response response = steps.registerUser(payload);
-        response.then().statusCode(403)
+        response.then()
+                .statusCode(403)
+                .body("message", equalTo("Email, password and name are required fields"));
+    }
+
+    @Test
+    @DisplayName("Создание пользователя без пароля")
+    @Description("Ожидается 403 и сообщение об обязательных полях")
+    public void createUserWithoutPassword() {
+        UserDto user = new UserDto(email, null, "Test");
+        Response response = steps.registerUser(user);
+
+        response.then()
+                .statusCode(403)
+                .body("message", equalTo("Email, password and name are required fields"));
+    }
+
+    @Test
+    @DisplayName("Создание пользователя без имени")
+    @Description("Ожидается 403 и сообщение об обязательных полях")
+    public void createUserWithoutName() {
+        UserDto user = new UserDto(email, "123456", null);
+        Response response = steps.registerUser(user);
+
+        response.then()
+                .statusCode(403)
                 .body("message", equalTo("Email, password and name are required fields"));
     }
 }

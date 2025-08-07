@@ -5,11 +5,12 @@ import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import praktikum.config.BaseURL;
 import steps.OrderSteps;
 import steps.UserSteps;
-import org.junit.After;
+import steps.UserDto;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,22 +24,19 @@ public class CreateOrderApiTest {
 
     private String accessToken;
 
-    // Валидные ID ингредиентов из документации
-    private final String VALID_INGREDIENT_1 = "60d3b41abdacab0026a733c6";
-    private final String VALID_INGREDIENT_2 = "609646e4dc916e00276b2870";
-
     @Before
     public void setUp() {
         RestAssured.baseURI = BaseURL.BASE_URL;
         String email = userSteps.generateUniqueEmail();
-        String payload = String.format("{\"email\": \"%s\", \"password\": \"123456\", \"name\": \"Test\"}", email);
-        Response response = userSteps.registerUser(payload);
+        UserDto user = new UserDto(email, "123456", "Test");
+        Response response = userSteps.registerUser(user);
         accessToken = userSteps.extractAccessToken(response);
     }
+
     @After
     public void tearDown() {
         if (accessToken != null) {
-            userSteps.deleteUser(accessToken); // не добавляй повторно "Bearer", он уже есть в методе
+            userSteps.deleteUser(accessToken);
         }
     }
 
@@ -70,7 +68,6 @@ public class CreateOrderApiTest {
                 .body("success", is(true))
                 .body("name", notNullValue());
     }
-
 
     @Test
     @DisplayName("Создание заказа с невалидным ингредиентом")
