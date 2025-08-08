@@ -3,6 +3,7 @@ package user;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.config.BaseURL;
@@ -18,12 +19,24 @@ public class LoginUserApiTest {
     private String email;
     private final String password = "123456";
 
+    private String accessToken;
+
     @Before
     public void setUp() {
         baseURI = BaseURL.BASE_URL;
         email = steps.generateUniqueEmail();
         UserDto user = new UserDto(email, password, "Test");
-        steps.registerUser(user);
+        Response response = steps.registerUser(user);
+        accessToken = steps.extractAccessToken(response);
+    }
+
+    @After
+    public void tearDown() {
+        if (accessToken != null) {
+            steps.deleteUser(accessToken)
+                    .then()
+                    .statusCode(anyOf(is(202), is(401)));
+        }
     }
 
     @Test
